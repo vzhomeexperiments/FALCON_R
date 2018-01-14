@@ -27,7 +27,6 @@ Falcon R:
 //+------------------------------------------------------------------+
 extern string  Header1="----------Trading Rules Variables-----------";
 extern int     FastMAPeriod=10;
-extern int     SlowMAPeriod=40;
 extern int     KeltnerPeriod=200;
 extern int     KeltnerMulti=5;
 extern int     KeltnerMultiStopRange=4;
@@ -125,7 +124,7 @@ double StopHidden,TakeHidden;
 int YenPairAdjustFactor;
 int    P;
 double myATR;
-double FastMA1, SlowMA1, Price1;
+double FastMA1, Price1;
 
 // TDL 3: Declaring Variables (and the extern variables above)
 double KeltnerUpper0, KeltnerLower0; //for entries
@@ -233,8 +232,7 @@ int start()
 //----------Entry & Exit Variables-----------
 
    FastMA1=iMA(Symbol(),Period(),FastMAPeriod,0, MODE_SMA, PRICE_CLOSE,1); // Shift 1
-   SlowMA1=iMA(Symbol(),Period(),SlowMAPeriod,0, MODE_SMA, PRICE_CLOSE,1); // Shift 1
-   
+      
    // TDL 1: Assigning Values to Variables
    KeltnerUpper0 = iCustom(NULL, 0, "Keltner_Channels", KeltnerPeriod, 0, 0, KeltnerPeriod, KeltnerMulti, True, 0, 1); // Shift 1 new entries
    KeltnerLower0 = iCustom(NULL, 0, "Keltner_Channels", KeltnerPeriod, 0, 0, KeltnerPeriod, KeltnerMulti, True, 2, 1); // Shift 1
