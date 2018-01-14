@@ -28,8 +28,9 @@ Falcon R:
 extern string  Header1="----------Trading Rules Variables-----------";
 extern int     FastMAPeriod=10;
 extern int     SlowMAPeriod=40;
-extern int     KeltnerPeriod=15;
-extern int     KeltnerMulti=3;
+extern int     KeltnerPeriod=200;
+extern int     KeltnerMulti=5;
+extern int     KeltnerMultiStopRange=4;
 
 extern string  Header2="----------Position Sizing Settings-----------";
 extern string  Lot_explanation="If IsSizingOn = true, Lots variable will be ignored";
@@ -127,9 +128,9 @@ double myATR;
 double FastMA1, SlowMA1, Price1;
 
 // TDL 3: Declaring Variables (and the extern variables above)
-
-double KeltnerUpper1, KeltnerLower1;
-int CrossTriggered1, CrossTriggered2, CrossTriggered3;
+double KeltnerUpper0, KeltnerLower0; //for entries
+double KeltnerUpper1, KeltnerLower1; //for stops
+int CrossTriggered0, CrossTriggered1, CrossTriggered2, CrossTriggered3;
 
 int OrderNumber;
 double HiddenSLList[][2]; // First dimension is for position ticket numbers, second is for the SL Levels
@@ -235,13 +236,16 @@ int start()
    SlowMA1=iMA(Symbol(),Period(),SlowMAPeriod,0, MODE_SMA, PRICE_CLOSE,1); // Shift 1
    
    // TDL 1: Assigning Values to Variables
+   KeltnerUpper0 = iCustom(NULL, 0, "Keltner_Channels", KeltnerPeriod, 0, 0, KeltnerPeriod, KeltnerMulti, True, 0, 1); // Shift 1 new entries
+   KeltnerLower0 = iCustom(NULL, 0, "Keltner_Channels", KeltnerPeriod, 0, 0, KeltnerPeriod, KeltnerMulti, True, 2, 1); // Shift 1
    
-   KeltnerUpper1 = iCustom(NULL, 0, "Keltner_Channels", KeltnerPeriod, 0, 0, KeltnerPeriod, KeltnerMulti, True, 0, 1); // Shift 1
-   KeltnerLower1 = iCustom(NULL, 0, "Keltner_Channels", KeltnerPeriod, 0, 0, KeltnerPeriod, KeltnerMulti, True, 2, 1); // Shift 1
+   KeltnerUpper1 = iCustom(NULL, 0, "Keltner_Channels", KeltnerPeriod, 0, 0, KeltnerPeriod, KeltnerMulti+KeltnerMultiStopRange, True, 0, 1); // Shift 1 new stops
+   KeltnerLower1 = iCustom(NULL, 0, "Keltner_Channels", KeltnerPeriod, 0, 0, KeltnerPeriod, KeltnerMulti+KeltnerMultiStopRange, True, 2, 1); // Shift 1
    
-   CrossTriggered1=Crossed1(FastMA1,SlowMA1);
-   CrossTriggered2=Crossed2(Ask,KeltnerUpper1);
-   CrossTriggered3=Crossed3(Bid,KeltnerLower1);
+   CrossTriggered0=Crossed0(FastMA1,KeltnerUpper0); //sell
+   CrossTriggered1=Crossed1(FastMA1,KeltnerLower0); //buy
+   CrossTriggered2=Crossed2(Ask,KeltnerUpper1);     //soft stop for sell
+   CrossTriggered3=Crossed3(Bid,KeltnerLower1);     //soft stop for buy order  
 
 //----------TP, SL, Breakeven and Trailing Stops Variables-----------
 
@@ -300,11 +304,11 @@ int start()
 
 //----------Entry Rules (Market and Pending) -----------
 
-   if(IsLossLimitBreached(IsLossLimitActivated,LossLimitPercent,OnJournaling,EntrySignal(CrossTriggered1))==False) 
+   if(IsLossLimitBreached(IsLossLimitActivated,LossLimitPercent,OnJournaling,EntrySignal(CrossTriggered0))==False) 
       if(IsVolLimitBreached(IsVolLimitActivated,VolatilityMultiplier,ATRTimeframe,ATRPeriod)==False)
          if(IsMaxPositionsReached(MaxPositionsAllowed,MagicNumber,OnJournaling)==False)
            {
-            if(TradeAllowed && EntrySignal(CrossTriggered1)==1)
+            if(TradeAllowed && EntrySignal(CrossTriggered1)==2)
               { // Open Long Positions
                OrderNumber=OpenPositionMarket(OP_BUY,GetLot(IsSizingOn,Lots,Risk,YenPairAdjustFactor,Stop,P),Stop,Take,MagicNumber,Slippage,OnJournaling,P,IsECNbroker,MaxRetriesPerTick,RetryInterval);
    
@@ -322,7 +326,7 @@ int start()
              
               }
    
-            if(TradeAllowed && EntrySignal(CrossTriggered1)==2)
+            if(TradeAllowed && EntrySignal(CrossTriggered0)==1)
               { // Open Short Positions
                OrderNumber=OpenPositionMarket(OP_SELL,GetLot(IsSizingOn,Lots,Risk,YenPairAdjustFactor,Stop,P),Stop,Take,MagicNumber,Slippage,OnJournaling,P,IsECNbroker,MaxRetriesPerTick,RetryInterval);
    
@@ -930,6 +934,56 @@ double VolBasedTakeProfit(bool isVolatilitySwitchOn,double fixedTP,double VolATR
   }
 //+------------------------------------------------------------------+
 //| End of Volatility-Based Take Profit                 
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+// Cross0                                                             
+//+------------------------------------------------------------------+
+
+// Type: Fixed Template 
+// Do not edit unless you know what you're doing
+
+// This function determines if a cross happened between 2 lines/data set
+
+/* 
+
+If Output is 0: No cross happened
+If Output is 1: Line 1 crossed Line 2 from Bottom
+If Output is 2: Line 1 crossed Line 2 from top 
+
+*/
+
+int Crossed0(double line1,double line2)
+  {
+
+   static int CurrentDirection1=0;
+   static int LastDirection1=0;
+   static bool FirstTime1=true;
+
+//----
+   if(line1>line2)
+      CurrentDirection1=1;  // line1 above line2
+   if(line1<line2)
+      CurrentDirection1=2;  // line1 below line2
+//----
+   if(FirstTime1==true) // Need to check if this is the first time the function is run
+     {
+      FirstTime1=false; // Change variable to false
+      LastDirection1=CurrentDirection1; // Set new direction
+      return (0);
+     }
+
+   if(CurrentDirection1!=LastDirection1 && FirstTime1==false) // If not the first time and there is a direction change
+     {
+      LastDirection1=CurrentDirection1; // Set new direction
+      return(CurrentDirection1); // 1 for up, 2 for down
+     }
+   else
+     {
+      return(0);  // No direction change
+     }
+  }
+//+------------------------------------------------------------------+
+// End of Cross                                                      
 //+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 // Cross1                                                             
