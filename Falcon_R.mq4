@@ -3,7 +3,7 @@
 //|                                        Copyright 2015,Lucas Liew 
 //|                                  lucas@blackalgotechnologies.com 
 //+------------------------------------------------------------------+
-#include <01_HistoryFunction.mqh>
+#include <01_GetHistoryOrder.mqh>
 #include <02_OrderProfitToCSV.mqh>
 #include <03_ReadCommandFromCSV.mqh>
 #include <08_TerminalNumber.mqh>
@@ -16,8 +16,9 @@
 #property strict
 /* 
 
-Falcon B: 
+Falcon R: 
 - Adding specific functions to manage Decision Support System
+- Ranging bot
 
 */
 
@@ -105,7 +106,7 @@ extern int     ATRTimeframe=60; // In minutes
 extern int     ATRPeriod=14;
 
 extern string  Header15="----------EA General Settings-----------";
-extern int     MagicNumber           = 8118201;
+extern int     MagicNumber           = 8135201;
 extern int     TerminalType          = 1;         //0 mean slave, 1 mean master
 extern bool    R_Management          = true;      //R_Management true will enable Decision Support Centre (using R)
 extern int     Slippage=3; // In Pips
