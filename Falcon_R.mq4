@@ -26,7 +26,7 @@ Falcon R:
 //| Setup                                               
 //+------------------------------------------------------------------+
 extern string  Header1="----------Trading Rules Variables-----------";
-extern int     FastMAPeriod=10;
+extern int     FastMAPeriod=40;
 extern int     KeltnerPeriod=200;
 extern int     KeltnerMulti=5;
 extern int     KeltnerMultiStopRange=4;
@@ -219,7 +219,7 @@ int start()
      {
          //code that only executed once a bar
       //   Direction = -1; //set direction to -1 by default in order to achieve cross!
-         OrderProfitToCSV(T_Num(MagicNumber));                        //write previous orders profit results for auto analysis in R
+         OrderProfitToCSV(T_Num());                        //write previous orders profit results for auto analysis in R
          TradeAllowed = ReadCommandFromCSV(MagicNumber);              //read command from R to make sure trading is allowed
       //   Direction = ReadAutoPrediction(MagicNumber, -1);             //get prediction from R for trade direction         
         
